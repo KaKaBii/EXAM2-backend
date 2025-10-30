@@ -35,6 +35,41 @@ def page_register():
        
     return render_template('page_register.html')
 
+
+def login_user(username, password):
+    conn = get_db_connection()
+    if conn is not None:
+        try:
+            cursor = conn.cursor()
+            cursor.execute("SELECT * FROM users WHERE username = ? AND password = ?", (username, password))
+            user = cursor.fetchone()
+            if user:
+                return {"status": "success", "message": "Login successful"}
+            else:
+                return {"status": "error", "message": "Invalid username or password"}
+        except sqlite3.Error as e:
+            logging.error(f"Database query error: {e}")
+            return {"status": "error", "message": "An error occurred"}
+        finally:
+            conn.close()
+    else:
+        return {"status": "error", "message": "Database connection error"}
+
+@app.route('/page_login' , methods=['GET', 'POST'])
+def page_login():
+    try:
+        if request.method == 'POST':
+            data = request.get_json()
+            username = data.get('username')
+            password = data.get('password')
+            result = login_user(username, password)
+            if result["status"] == "success":
+                session['username'] = username
+            return jsonify(result)
+        return render_template('page_login.html')
+    except Exception as e:
+        return jsonify({"status": "error", "message": str(e)}), 500
+
 # 補齊剩餘副程式
 
 
